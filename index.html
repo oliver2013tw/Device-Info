@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>進階裝置性能驗證系統</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/UAParser.js/1.0.35/ua-parser.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root { --primary-color: #007bff; --bg-color: #f4f4f9; --success-color: #28a745; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.08); width: 100%; max-width: 550px; text-align: center; }
+        h2, h3 { color: #333; margin-bottom: 20px; }
+        .btn { background-color: var(--primary-color); color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 600; transition: 0.2s; width: 100%; margin-top: 10px; }
+        .btn:hover { background-color: #0056b3; }
+        .btn:disabled { background-color: #aab8c5; cursor: not-allowed; }
+        .result-box { margin-top: 25px; padding: 15px; background: #e9ffe9; border: 2px dashed var(--success-color); border-radius: 8px; display: none; }
+        .result-code { font-size: 28px; font-weight: bold; color: var(--success-color); letter-spacing: 3px; }
+        .loading-status { color: #555; font-style: italic; margin-top: 20px; display: none; }
+        .loading-step { font-weight: bold; color: var(--primary-color); }
+        
+        /* 管理員區塊樣式 */
+        .admin-toggle { margin-top: 40px; font-size: 13px; color: #999; cursor: pointer; text-decoration: underline; transition: color 0.2s; }
+        .admin-toggle:hover { color: #555; }
+        #admin-panel { display: none; border-top: 1px solid #eee; margin-top: 25px; padding-top: 25px; text-align: left; animation: fadeIn 0.3s ease-in-out; }
+        input { width: 100%; padding: 10px; margin: 8px 0 20px 0; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        input:focus { outline: none; border-color: var(--primary-color); }
+        .error-msg { color: #d9534f; background: #f8d7da; padding: 10px; border-radius: 4px; font-size: 14px; display: none; margin-bottom: 15px; }
+        
+        /* 結果表格樣式 */
+        .result-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        .result-table th, .result-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        .result-table th { background-color: #f8f9fa; color: #333; font-weight: 600; }
+        .section-header { background-color: #e9ecef !important; text-align: center !important; font-size: 15px; }
+        .score-cell { font-family: 'Courier New', monospace; font-weight: bold; color: #d9534f; }
+        .score-note { font-size: 12px; color: #666; margin-top: 5px; text-align: right; }
+
+        /* 用於 GPU 測試的隱藏 Canvas */
+        #test-canvas { display: none; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<canvas id="test-canvas" width="800" height="600"></canvas>
+
+<div class="container">
+    <div id="user-view">
+        <h2>進階裝置性能驗證</h2>
+        <p style="color:#666; margin-bottom: 25px;">點擊按鈕將進行 CPU、記憶體與圖形渲染測試。<br>測試過程約需 3-5 秒。</p>
+        <button id="start-btn" class="btn" onclick="runFullTestSequence()">開始全面測試</button>
+        
+        <div id="loading-area" class="loading-status">
+            正在執行：<span id="loading-step" class="loading-step">準備中...</span>
+            <br><small>(請勿關閉視窗)</small>
+        </div>
+        
+        <div id="result-area" class="result-box">
+            <div>您的驗證代碼：</div>
+            <div class="result-code" id="auth-code"></div>
+            <p style="font-size:14px; color:#666; margin-top:10px;">請將此代碼提供給管理員以查看詳細報告。</p>
+        </div>
+    </div>
+
+    <div class="admin-toggle" onclick="toggleAdmin()">管理員專區</div>
+
+    <div id="admin-panel">
+        <h3>管理員登入查看結果</h3>
+        <div id="admin-error" class="error-msg"></div>
+        
+        <label for="admin-pwd">管理員密碼</label>
+        <input type="password" id="admin-pwd" placeholder="輸入密碼">
+        
+        <label for="device-code">裝置認證代碼</label>
+        <input type="text" id="device-code" placeholder="輸入 6 位數代碼" maxlength="6" style="letter-spacing: 2px; font-family: monospace;">
+        
+        <button class="btn" style="background-color: #555;" onclick="fetchAndDisplayData()">查詢詳細報告</button>
+
+        <div id="report-container" style="display: none;">
+            </div>
+    </div>
+</div>
+
+<script>
+    // 1. Firebase 設定
+    const firebaseConfig = {
+        apiKey: "AIzaSyCTWMvsv6JylnjCGYvznnfrXnTSAV7JUXk",
+        authDomain: "tnt-device-info.firebaseapp.com",
+        projectId: "tnt-device-info",
+        storageBucket: "tnt-device-info.firebasestorage.app",
+        messagingSenderId: "434641237799",
+        appId: "1:434641237799:web:7b00cf8dd372e29891db02",
+        measurementId: "G-S92W9HQQM9"
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    // ==========================================
+    // 2. 測試核心邏輯 (Benchmark Functions)
+    // ==========================================
+
+    // 輔助：延遲函數，避免 UI 卡死
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    // 測試項目 A: CPU 密集運算
+    async function testCPU() {
+        const t0 = performance.now();
+        let result = 0;
+        // 增加複雜度：浮點數、三角函數混合運算
+        for (let i = 0; i < 500000; i++) {
+            result += Math.sin(i) * Math.cos(i) + Math.sqrt(i);
+        }
+        const t1 = performance.now();
+        return Math.round(t1 - t0); // 回傳毫秒整數
+    }
+
+    // 測試項目 B: 記憶體 (RAM) 讀寫模擬
+    async function testRAM() {
+        const t0 = performance.now();
+        // 分配一個較大的陣列 (約 200萬個數字)
+        const arrSize = 2000000;
+        let arr = new Float32Array(arrSize);
+        // 寫入資料
+        for (let i = 0; i < arrSize; i++) {
+            arr[i] = Math.random() * i;
+        }
+        // 讀取並計算
+        let sum = 0;
+        for (let i = 0; i < arrSize; i++) {
+            sum += arr[i];
+        }
+        const t1 = performance.now();
+        return Math.round(t1 - t0);
+    }
+
+    // 測試項目 C: 圖形渲染 (GPU)
+    async function testGPU() {
+        const canvas = document.getElementById('test-canvas');
+        const ctx = canvas.getContext('2d', { alpha: false }); // 優化 context
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        const t0 = performance.now();
+        // 繪製 3000 個隨機半透明矩形
+        for (let i = 0; i < 3000; i++) {
+            ctx.fillStyle = `rgba(${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)}, 0.5)`;
+            ctx.fillRect(Math.random() * width, Math.random() * height, Math.random() * 50 + 10, Math.random() * 50 + 10);
+        }
+        // 強制完成渲染佇列 (簡單模擬)
+        const imageData = ctx.getImageData(0, 0, 1, 1);
+        
+        const t1 = performance.now();
+        return Math.round(t1 - t0);
+    }
+
+    // 主流程：執行所有測試並上傳
+    async function runFullTestSequence() {
+        const startBtn = document.getElementById('start-btn');
+        const loadingArea = document.getElementById('loading-area');
+        const loadingStep = document.getElementById('loading-step');
+        const resultArea = document.getElementById('result-area');
+        const authCodeSpan = document.getElementById('auth-code');
+
+        startBtn.disabled = true;
+        resultArea.style.display = 'none';
+        loadingArea.style.display = 'block';
+
+        try {
+            // 步驟 1: CPU
+            loadingStep.innerText = "CPU 核心運算測試中...";
+            await delay(100); // 讓 UI 更新
+            const cpuScore = await testCPU();
+
+            // 步驟 2: RAM
+            loadingStep.innerText = "記憶體讀寫速度測試中...";
+            await delay(100);
+            const ramScore = await testRAM();
+
+            // 步驟 3: GPU
+            loadingStep.innerText = "圖形渲染能力測試中...";
+            await delay(100);
+            const gpuScore = await testGPU();
+
+            // 步驟 4: 蒐集裝置資訊
+            loadingStep.innerText = "分析裝置資訊並上傳結果...";
+            const parser = new UAParser();
+            const ua = parser.getResult();
+            const deviceType = ua.device.type ? ua.device.type.toUpperCase() : "DESKTOP/LAPTOP";
+            const vendor = ua.device.vendor || "";
+            const model = ua.device.model || "";
+            const fullModel = (vendor || model) ? `${vendor} ${model}`.trim() : "Generic Device";
+
+            // 整理資料結構
+            const testData = {
+                info: {
+                    deviceType: deviceType,
+                    os: `${ua.os.name} ${ua.os.version}`,
+                    browser: `${ua.browser.name} ${ua.browser.version}`,
+                    model: fullModel,
+                    screen: `${window.screen.width} x ${window.screen.height}`,
+                    userAgent: navigator.userAgent
+                },
+                scores: {
+                    cpu: cpuScore,
+                    ram: ramScore,
+                    gpu: gpuScore,
+                    total: cpuScore + ramScore + gpuScore // 總分 (越低越好)
+                },
+                timestamp: new Date().toLocaleString('zh-TW', { hour12: false })
+            };
+
+            // 步驟 5: 上傳至 Firebase
+            const code = generateCode(6);
+            await db.collection('advanced_device_tests').doc(code).set(testData);
+
+            // 完成
+            loadingArea.style.display = 'none';
+            startBtn.style.display = 'none';
+            authCodeSpan.innerText = code;
+            resultArea.style.display = 'block';
+
+        } catch (error) {
+            console.error(error);
+            alert("測試過程中發生錯誤，請重新整理頁面再試一次。");
+            startBtn.disabled = false;
+            loadingArea.style.display = 'none';
+        }
+    }
+
+    // ==========================================
+    // 3. 管理員邏輯與報表呈現
+    // ==========================================
+    function toggleAdmin() {
+        const panel = document.getElementById('admin-panel');
+        panel.style.display = panel.style.display === 'none' || panel.style.display === '' ? 'block' : 'none';
+        if (panel.style.display === 'block') {
+            document.getElementById('admin-pwd').focus();
+        }
+    }
+
+    async function fetchAndDisplayData() {
+        const pwdInput = document.getElementById('admin-pwd').value;
+        const codeInput = document.getElementById('device-code').value.trim().toUpperCase();
+        const errorMsg = document.getElementById('admin-error');
+        const reportContainer = document.getElementById('report-container');
+
+        errorMsg.style.display = 'none';
+        reportContainer.style.display = 'none';
+        reportContainer.innerHTML = "";
+
+        // 簡易密碼驗證
+        if (pwdInput !== "Oliver_5490") {
+            showError("管理員密碼錯誤！");
+            return;
+        }
+        if (codeInput.length < 6) {
+            showError("請輸入完整 6 位數代碼");
+            return;
+        }
+
+        try {
+            const docRef = db.collection('advanced_device_tests').doc(codeInput);
+            const doc = await docRef.get();
+
+            if (doc.exists) {
+                const data = doc.data();
+                renderReportTable(codeInput, data);
+                reportContainer.style.display = 'block';
+            } else {
+                showError("找不到此代碼的測試紀錄。請確認代碼是否正確。");
+            }
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            showError("讀取資料庫時發生錯誤，請檢查網路。");
+        }
+    }
+
+    // 渲染 HTML 表格
+    function renderReportTable(code, data) {
+        const info = data.info;
+        const scores = data.scores;
+        
+        const html = `
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th colspan="2" class="section-header">基本資訊與規格</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="width: 40%;">代碼 / 時間</td><td><strong>${code}</strong> <br> ${data.timestamp}</td></tr>
+                    <tr><td>裝置型號</td><td><strong>${info.model}</strong></td></tr>
+                    <tr><td>裝置類型</td><td>${info.deviceType}</td></tr>
+                    <tr><td>作業系統</td><td>${info.os}</td></tr>
+                    <tr><td>瀏覽器</td><td>${info.browser}</td></tr>
+                    <tr><td>螢幕解析度</td><td>${info.screen}</td></tr>
+                </tbody>
+                <thead>
+                    <tr>
+                        <th colspan="2" class="section-header" style="border-top: 2px solid #ddd;">
+                            性能測試結果 (單位: 毫秒 ms)
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>CPU 運算耗時</td>
+                        <td class="score-cell">${scores.cpu}</td>
+                    </tr>
+                    <tr>
+                        <td>RAM 讀寫耗時</td>
+                        <td class="score-cell">${scores.ram}</td>
+                    </tr>
+                    <tr>
+                        <td>GPU 渲染耗時</td>
+                        <td class="score-cell">${scores.gpu}</td>
+                    </tr>
+                    <tr style="background-color: #fff0f0;">
+                        <td><strong>總耗時指標</strong></td>
+                        <td class="score-cell" style="font-size: 1.2em;">${scores.total}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="score-note">* 數值皆為執行耗時，<strong style="color:#d9534f">越低代表性能越好</strong>。</div>
+            <div style="margin-top:15px; font-size:12px; color:#999; word-break: break-all; max-height: 60px; overflow-y: auto;">
+                UA: ${info.userAgent}
+            </div>
+        `;
+        document.getElementById('report-container').innerHTML = html;
+    }
+
+    function showError(msg) {
+        const errorDiv = document.getElementById('admin-error');
+        errorDiv.innerText = msg;
+        errorDiv.style.display = 'block';
+    }
+
+    // 工具：產生易讀的隨機代碼 (移除 I,O,0,1 等易混淆字元)
+    function generateCode(length) {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
+    }
+</script>
+
+</body>
+</html>
