@@ -3,96 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESST</title>
+    <title>Inferno Extreme Benchmark Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/UAParser.js/1.0.35/ua-parser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <style>
-        :root { --accent: #00ffcc; --bg: #050505; --panel: #111; --danger: #ff3e3e; }
-        body { background: var(--bg); color: #e0e0e0; font-family: 'Consolas', 'Monaco', monospace; margin: 0; overflow-x: hidden; }
-        .container { max-width: 900px; margin: 40px auto; padding: 20px; }
-        .hero { text-align: center; margin-bottom: 50px; }
-        .hero h1 { font-size: 3rem; margin: 0; color: var(--accent); text-transform: uppercase; letter-spacing: 5px; }
-        .hero p { color: #888; font-size: 1rem; }
-
-        /* 測試面板 */
-        .bench-card { background: var(--panel); border: 1px solid #333; border-radius: 4px; padding: 30px; position: relative; }
-        .status-display { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 0.9rem; }
-        .progress-outer { height: 4px; background: #222; width: 100%; margin: 20px 0; border-radius: 2px; }
-        #progress-inner { height: 100%; background: var(--accent); width: 0%; transition: width 0.5s; box-shadow: 0 0 10px var(--accent); }
+        :root { --main: #ff3300; --bg: #000; --font: 'Courier New', monospace; }
+        body { background: var(--bg); color: #fff; font-family: var(--font); margin: 0; display: flex; justify-content: center; }
+        .wrapper { width: 100%; max-width: 1000px; padding: 50px 20px; }
+        .header { text-align: center; border: 2px solid var(--main); padding: 20px; margin-bottom: 30px; }
+        .header h1 { margin: 0; color: var(--main); font-size: 2.5rem; text-shadow: 0 0 10px var(--main); }
         
-        .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        .metric-box { background: #000; padding: 15px; border: 1px solid #222; }
-        .label { color: #666; font-size: 0.75rem; margin-bottom: 5px; text-transform: uppercase; }
-        .value { color: var(--accent); font-size: 1.2rem; font-weight: bold; }
-
-        .btn-action { background: none; border: 1px solid var(--accent); color: var(--accent); padding: 15px 40px; cursor: pointer; font-size: 1.1rem; transition: 0.3s; width: 100%; margin-top: 20px; text-transform: uppercase; }
-        .btn-action:hover { background: var(--accent); color: #000; box-shadow: 0 0 20px var(--accent); }
-        .btn-action:disabled { border-color: #444; color: #444; cursor: not-allowed; }
-
-        .result-code-display { display: none; text-align: center; margin-top: 30px; padding: 20px; background: #001a14; border: 1px solid var(--accent); }
+        /* 測試介面 */
+        .bench-container { background: #111; padding: 30px; border-radius: 4px; box-shadow: inset 0 0 20px #000; }
+        .progress-box { margin: 30px 0; }
+        .bar-bg { background: #222; height: 10px; border-radius: 5px; overflow: hidden; }
+        .bar-fill { height: 100%; background: var(--main); width: 0%; transition: width 0.3s linear; }
         
-        /* 管理員專區 */
-        #admin-panel { margin-top: 100px; border-top: 1px solid #333; padding-top: 50px; }
-        .admin-input { background: #000; border: 1px solid #444; color: #fff; padding: 12px; width: 100%; margin-bottom: 10px; box-sizing: border-box; }
-        .report-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .report-table th, .report-table td { border: 1px solid #222; padding: 15px; text-align: left; }
-        .report-table th { background: #1a1a1a; color: var(--accent); font-size: 0.8rem; }
-        .stability-high { color: #00ff00; }
-        .stability-low { color: var(--danger); font-weight: bold; }
-
-        canvas { display: none; }
+        .realtime-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 30px; }
+        .stat-card { border: 1px solid #333; padding: 15px; position: relative; }
+        .stat-label { font-size: 0.7rem; color: #777; margin-bottom: 10px; }
+        .stat-val { font-size: 1.3rem; color: var(--main); font-weight: bold; }
+        
+        .btn-burn { background: var(--main); color: #fff; border: none; padding: 20px; width: 100%; font-size: 1.5rem; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-burn:hover { background: #fff; color: var(--main); }
+        
+        /* 管理員介面 */
+        #admin-zone { margin-top: 100px; padding-top: 50px; border-top: 1px dashed #444; }
+        .adm-input { background: #000; border: 1px solid #444; color: #fff; padding: 15px; width: 100%; margin: 5px 0 20px; font-family: inherit; }
+        .report { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .report td, .report th { border: 1px solid #333; padding: 15px; text-align: left; }
+        .report th { color: var(--main); }
+        .fire-text { color: #ff0000; font-weight: bold; animation: flicker 1s infinite alternate; }
+        @keyframes flicker { from { opacity: 0.5; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="hero">
-        <h1>Extreme-Bench v3.0</h1>
-        <p>系統底層壓力測試 - 預計時長：15 ~ 20 分鐘</p>
+<div class="wrapper">
+    <div class="header">
+        <h1>PROJECT INFERNO</h1>
+        <p>「地獄火」全模組高負荷硬體測試系統</p>
     </div>
 
-    <div class="bench-card" id="main-ui">
-        <div id="start-screen">
-            <p style="color: #bbb;">本測試將模擬極高負載的運算任務（多線程整數運算、雙精度浮點數、4K 紋理填充）。測試期間請勿切換視窗或關閉螢幕，否則瀏覽器將會限制性能導致數據不準確。</p>
-            <button class="btn-action" onclick="initExpertBenchmark()">執行完整深度評測</button>
+    <div class="bench-container">
+        <div id="ui-idle">
+            <p style="color: #ff9900;">⚠️ 警告：本系統將啟動全模組負載測試，包含 CPU 邏輯死循環、雙精度矩陣、以及 4K 像素壓力。</p>
+            <p>測試總循環數：30 ROUNDS | 預計時間：25 MINS</p>
+            <button class="btn-burn" onclick="startInferno()">啟動全負荷引擎</button>
         </div>
 
-        <div id="active-bench" style="display: none;">
-            <div class="status-display">
-                <span id="current-task">準備核心引擎...</span>
-                <span id="current-round">ROUND: 0 / 30</span>
+        <div id="ui-running" style="display: none;">
+            <div style="text-align: center; color: var(--main);" id="task-name">ENGINE INITIALIZING...</div>
+            <div class="progress-box">
+                <div class="bar-bg"><div class="bar-fill" id="bar"></div></div>
+                <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.8rem;">
+                    <span id="pc-text">0%</span>
+                    <span id="round-text">ROUND 0/30</span>
+                </div>
             </div>
-            <div class="progress-outer"><div id="progress-inner"></div></div>
-            <div class="metric-grid">
-                <div class="metric-box"><div class="label">CPU 負荷</div><div class="value" id="val-cpu">WAITING</div></div>
-                <div class="metric-box"><div class="label">渲染吞吐量</div><div class="value" id="val-gpu">WAITING</div></div>
-                <div class="metric-box"><div class="label">記憶體頻寬</div><div class="value" id="val-ram">WAITING</div></div>
-                <div class="metric-box"><div class="label">熱降頻偵測</div><div class="value" id="val-heat">監控中</div></div>
+            <div class="realtime-stats">
+                <div class="stat-card"><div class="stat-label">CPU LOGIC STRESS</div><div class="stat-val" id="stat-cpu">0 ms</div></div>
+                <div class="stat-card"><div class="stat-label">MEM IO THROUGHPUT</div><div class="stat-val" id="stat-ram">0 ms</div></div>
+                <div class="stat-card"><div class="stat-label">4K RASTER ENGINE</div><div class="stat-val" id="stat-gpu">0 ms</div></div>
+                <div class="stat-card"><div class="stat-label">JS ENGINE PRESSURE</div><div class="stat-val" id="stat-js">0 ms</div></div>
             </div>
         </div>
 
-        <div id="result-screen" class="result-code-display">
-            <p style="margin: 0;">測試完畢。認證加密代碼：</p>
-            <h2 id="final-code" style="letter-spacing: 8px; font-size: 2.5rem; color: var(--accent);">------</h2>
-            <p style="color: #666; font-size: 0.8rem;">(此代碼僅供管理員於後台解碼性能報告)</p>
+        <div id="ui-done" style="display: none; text-align: center; border: 2px solid #00ff00; padding: 30px;">
+            <h2 style="color: #00ff00;">TEST COMPLETED</h2>
+            <p>全負荷測試報告已上傳，驗證碼為：</p>
+            <div id="final-code" style="font-size: 3rem; color: #fff; letter-spacing: 10px;">------</div>
         </div>
     </div>
 
-    <div id="admin-panel">
-        <h3 style="color: #444; border-bottom: 1px solid #222; padding-bottom: 10px;">ADMINISTRATOR DECODING</h3>
-        <input type="password" id="adm-pass" class="admin-input" placeholder="ACCESS PASSWORD">
-        <input type="text" id="adm-code" class="admin-input" placeholder="DEVICE AUTH CODE">
-        <button class="btn-action" style="font-size: 0.9rem;" onclick="loadExpertReport()">解密詳細性能報告</button>
-        <div id="admin-report-container"></div>
+    <div id="admin-zone">
+        <h3>DECRYPTION UNIT (ADMIN ONLY)</h3>
+        <input type="password" id="pass" class="adm-input" placeholder="ACCESS KEY">
+        <input type="text" id="code" class="adm-input" placeholder="USER AUTH CODE">
+        <button class="btn-burn" style="font-size: 1rem; padding: 10px;" onclick="getInfernoReport()">解析完整性能矩陣</button>
+        <div id="report-view"></div>
     </div>
 </div>
 
-<canvas id="stress-canvas" width="3840" height="2160"></canvas>
+<canvas id="inferno-canvas" width="3840" height="2160" style="display:none;"></canvas>
 
 <script>
-    // Firebase 初始化
+    // Firebase 配置
     const firebaseConfig = {
         apiKey: "AIzaSyCTWMvsv6JylnjCGYvznnfrXnTSAV7JUXk",
         authDomain: "tnt-device-info.firebaseapp.com",
@@ -104,146 +102,156 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // 專業參數：30 輪循環確保時長與穩定性追蹤
-    const TOTAL_ROUNDS = 30;
-    
-    async function initExpertBenchmark() {
-        document.getElementById('start-screen').style.display = 'none';
-        document.getElementById('active-bench').style.display = 'block';
-        
-        const logs = { cpu: [], gpu: [], ram: [] };
-        const updateUI = (task, round, pc) => {
-            document.getElementById('current-task').innerText = task;
-            document.getElementById('current-round').innerText = `ROUND: ${round} / ${TOTAL_ROUNDS}`;
-            document.getElementById('progress-inner').style.width = pc + '%';
-        };
+    const TOTAL_R = 30; // 30 輪極限測試
+    let logs = { cpu: [], ram: [], gpu: [], js: [] };
 
-        for(let r = 1; r <= TOTAL_ROUNDS; r++) {
-            let basePC = ((r - 1) / TOTAL_ROUNDS) * 100;
+    async function startInferno() {
+        document.getElementById('ui-idle').style.display = 'none';
+        document.getElementById('ui-running').style.display = 'block';
+
+        for(let r=1; r<=TOTAL_R; r++) {
+            const pcBase = ((r-1)/TOTAL_R)*100;
+            document.getElementById('round-text').innerText = `ROUND ${r}/${TOTAL_R}`;
+
+            // 1. CPU: 高強度質數搜索 + 費波那契 (Logic Unit)
+            document.getElementById('task-name').innerText = "STRESSING: CPU LOGIC CORE...";
+            let t = performance.now();
+            await runLogic(1000000);
+            let d = performance.now() - t;
+            logs.cpu.push(d);
+            document.getElementById('stat-cpu').innerText = `${Math.round(d)} ms`;
+            document.getElementById('bar').style.width = (pcBase + 0.8) + '%';
+
+            // 2. RAM: 大量數據塊對拷 (Bus Throughput)
+            document.getElementById('task-name').innerText = "STRESSING: MEMORY BUS...";
+            t = performance.now();
+            await runMem(20000000);
+            d = performance.now() - t;
+            logs.ram.push(d);
+            document.getElementById('stat-ram').innerText = `${Math.round(d)} ms`;
+            document.getElementById('bar').style.width = (pcBase + 1.6) + '%';
+
+            // 3. GPU: 4K 透明通道粒子模擬 (Rasterizer)
+            document.getElementById('task-name').innerText = "STRESSING: 4K RASTER ENGINE...";
+            t = performance.now();
+            await runGpu(15000);
+            d = performance.now() - t;
+            logs.gpu.push(d);
+            document.getElementById('stat-gpu').innerText = `${Math.round(d)} ms`;
+            document.getElementById('bar').style.width = (pcBase + 2.4) + '%';
+
+            // 4. JS: 複雜對象序列化與深拷貝 (Engine Load)
+            document.getElementById('task-name').innerText = "STRESSING: JS V8/WEBKIT ENGINE...";
+            t = performance.now();
+            await runJsEngine(100000);
+            d = performance.now() - t;
+            logs.js.push(d);
+            document.getElementById('stat-js').innerText = `${Math.round(d)} ms`;
+            document.getElementById('bar').style.width = (pcBase + 3.33) + '%';
             
-            // 測試 1: 多重整數壓力 (模擬多核心邏輯)
-            updateUI("CORE INT STRESS...", r, basePC + 2);
-            let t0 = performance.now();
-            await heavyIntCompute(800000);
-            let d1 = performance.now() - t0;
-            logs.cpu.push(d1);
-            document.getElementById('val-cpu').innerText = `${Math.round(d1)} ms`;
-
-            // 測試 2: 4K 畫布光柵化壓力 (GPU 負載)
-            updateUI("4K RASTER STRESS...", r, basePC + 4);
-            t0 = performance.now();
-            await heavyGpuRaster(12000);
-            let d2 = performance.now() - t0;
-            logs.gpu.push(d2);
-            document.getElementById('val-gpu').innerText = `${Math.round(d2)} ms`;
-
-            // 測試 3: 記憶體吞吐延遲
-            updateUI("MEM BANDWIDTH STRESS...", r, basePC + 6);
-            t0 = performance.now();
-            await heavyMemOps(15000000);
-            let d3 = performance.now() - t0;
-            logs.ram.push(d3);
-            document.getElementById('val-ram').innerText = `${Math.round(d3)} ms`;
-
-            // 熱降頻實時分析
-            if (r > 1) {
-                const thermalGap = logs.cpu[r-1] / logs.cpu[0];
-                if (thermalGap > 1.25) {
-                    document.getElementById('val-heat').innerText = "!!! 嚴重降頻 !!!";
-                    document.getElementById('val-heat').style.color = "var(--danger)";
-                } else {
-                    document.getElementById('val-heat').innerText = "正常範圍";
-                }
-            }
+            document.getElementById('pc-text').innerText = Math.round(pcBase + 3.33) + '%';
         }
 
         const parser = new UAParser();
-        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const authCode = Math.random().toString(36).substring(2, 8).toUpperCase();
         
-        await db.collection('pro_expert_v3').doc(code).set({
+        await db.collection('inferno_v4_pro').doc(authCode).set({
             logs,
-            device: parser.getResult(),
-            summary: {
-                stability: ((logs.cpu[0] / logs.cpu[TOTAL_ROUNDS-1]) * 100).toFixed(2),
-                avg_cpu: (logs.cpu.reduce((a,b)=>a+b,0) / TOTAL_ROUNDS).toFixed(2),
-                avg_gpu: (logs.gpu.reduce((a,b)=>a+b,0) / TOTAL_ROUNDS).toFixed(2)
+            ua: parser.getResult(),
+            stats: {
+                stability: (logs.cpu[0] / logs.cpu[TOTAL_R-1] * 100).toFixed(2),
+                score: Math.round(1000000 / (avg(logs.cpu) + avg(logs.gpu)))
             },
-            timestamp: new Date().toISOString()
+            time: new Date().toISOString()
         });
 
-        document.getElementById('active-bench').style.display = 'none';
-        document.getElementById('final-code').innerText = code;
-        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('ui-running').style.display = 'none';
+        document.getElementById('final-code').innerText = authCode;
+        document.getElementById('ui-done').style.display = 'block';
     }
 
-    // --- 高壓運算引擎 ---
-    function heavyIntCompute(limit) {
+    // --- 各大負荷設施演算單元 ---
+    const avg = a => a.reduce((x,y)=>x+y,0)/a.length;
+
+    function runLogic(n) {
         return new Promise(r => setTimeout(() => {
-            let count = 0;
-            for(let i=2; i<limit; i++) {
+            let res = [];
+            for(let i=2; i<n; i++) {
                 let p=true; 
                 for(let j=2; j*j<=i; j++) { if(i%j===0){p=false;break;} }
-                if(p) count++;
+                if(p) res.push(i);
             }
             r();
         }, 0));
     }
 
-    function heavyGpuRaster(items) {
+    function runMem(size) {
+        return new Promise(r => setTimeout(() => {
+            let a = new BigUint64Array(size);
+            for(let i=0; i<size; i++) a[i] = BigInt(i);
+            a.reverse();
+            a.sort();
+            r();
+        }, 0));
+    }
+
+    function runGpu(items) {
         return new Promise(r => {
-            const ctx = document.getElementById('stress-canvas').getContext('2d');
+            const ctx = document.getElementById('inferno-canvas').getContext('2d');
+            ctx.clearRect(0,0,3840,2160);
             for(let i=0; i<items; i++) {
-                ctx.fillStyle = `rgba(${i%255},${Math.random()*255},255,0.1)`;
-                ctx.beginPath();
-                ctx.arc(Math.random()*3840, Math.random()*2160, 30, 0, Math.PI*2);
-                ctx.fill();
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = "red";
+                ctx.fillStyle = `rgba(${i%255}, 50, 200, 0.1)`;
+                ctx.fillRect(Math.random()*3840, Math.random()*2160, 100, 100);
             }
             r();
         });
     }
 
-    function heavyMemOps(size) {
+    function runJsEngine(n) {
         return new Promise(r => setTimeout(() => {
-            let arr = new Float64Array(size);
-            for(let i=0; i<size; i++) arr[i] = Math.sqrt(i) * Math.PI;
-            arr.reverse();
+            let obj = Array.from({length: n}, (_, i) => ({id: i, d: Math.random(), s: "STRESS_DATA_"+i}));
+            let s = JSON.stringify(obj);
+            let p = JSON.parse(s);
+            p.sort((a,b) => b.d - a.d);
             r();
         }, 0));
     }
 
-    // --- 管理員報告解碼 ---
-    async function loadExpertReport() {
-        const p = document.getElementById('adm-pass').value;
-        const c = document.getElementById('adm-code').value.toUpperCase();
-        if(p !== 'Oliver_5490') return alert('DENIED');
+    // --- 管理員報告 ---
+    async function getInfernoReport() {
+        if(document.getElementById('pass').value !== 'Oliver_5490') return alert('ACCESS DENIED');
+        const c = document.getElementById('code').value.toUpperCase();
+        const doc = await db.collection('inferno_v4_pro').doc(c).get();
+        if(!doc.exists) return alert('INVALID CODE');
 
-        const doc = await db.collection('pro_expert_v3').doc(c).get();
-        if(!doc.exists) return alert('CODE NOT FOUND');
-
-        const data = doc.data();
-        const s = data.summary;
-        const stabilityClass = s.stability > 85 ? 'stability-high' : 'stability-low';
+        const d = doc.data();
+        const stability = parseFloat(d.stats.stability);
+        let statusText = stability > 90 ? "優異 (極強散熱)" : (stability > 70 ? "普通 (降頻)" : "糟糕 (熱過飽和)");
 
         
 
-        document.getElementById('admin-report-container').innerHTML = `
-            <table class="report-table">
-                <tr><th colspan="2">ENVIRONMENT DATA</th></tr>
-                <tr><td>OS / MODEL</td><td>${data.device.os.name} | ${data.device.device.vendor || ''} ${data.device.device.model || 'Generic'}</td></tr>
-                <tr><td>BROWSER</td><td>${data.device.browser.name} ${data.device.browser.version}</td></tr>
+        document.getElementById('report-view').innerHTML = `
+            <table class="report">
+                <tr><th colspan="2">HARDWARE ENVIRONMENT</th></tr>
+                <tr><td>OS / DEVICE</td><td>${d.ua.os.name} | ${d.ua.device.model || 'PC'}</td></tr>
+                <tr><td>ENGINE</td><td>${d.ua.browser.name} ${d.ua.browser.version}</td></tr>
                 
-                <tr><th colspan="2">PERFORMANCE METRICS (AVG)</th></tr>
-                <tr><td>CPU LOGIC</td><td>${s.avg_cpu} ms</td></tr>
-                <tr><td>GPU RENDER</td><td>${s.avg_gpu} ms</td></tr>
+                <tr><th colspan="2">STRESS TEST MATRIX (AVG TIME)</th></tr>
+                <tr><td>CPU Logic</td><td>${Math.round(avg(d.logs.cpu))} ms</td></tr>
+                <tr><td>Memory IO</td><td>${Math.round(avg(d.logs.ram))} ms</td></tr>
+                <tr><td>GPU 4K Raster</td><td>${Math.round(avg(d.logs.gpu))} ms</td></tr>
+                <tr><td>JS Engine Pressure</td><td>${Math.round(avg(d.logs.js))} ms</td></tr>
                 
-                <tr><th colspan="2">THERMAL STABILITY</th></tr>
-                <tr><td>穩定度評分</td><td class="${stabilityClass}">${s.stability}%</td></tr>
-                <tr><td colspan="2" style="font-size: 0.7rem; color: #666;">
-                    * 穩定度為第 1 輪與第 30 輪效能比值。數值越低代表發熱降頻越嚴重。
-                </td></tr>
+                <tr><th colspan="2">INFERNO STABILITY INDEX</th></tr>
+                <tr><td>穩定度評分</td><td class="fire-text">${d.stats.stability}%</td></tr>
+                <tr><td>熱控狀態</td><td>${statusText}</td></tr>
+                <tr><td>綜合性能得分</td><td><strong style="font-size: 1.5rem; color: #00ff00;">${d.stats.score}</strong></td></tr>
             </table>
         `;
     }
 </script>
+
 </body>
 </html>
