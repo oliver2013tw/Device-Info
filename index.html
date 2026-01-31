@@ -3,95 +3,204 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hardware Stress Test Pro</title>
+<title>HST PRO</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/UAParser.js/1.0.35/ua-parser.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-:root { --main: #1e90ff; --bg: #000; --font: 'Courier New', monospace; }
-body { background: var(--bg); color: #fff; font-family: var(--font); margin: 0; display: flex; justify-content: center; }
-.wrapper { width: 100%; max-width: 1000px; padding: 50px 20px; }
-.header { text-align: center; border: 2px solid var(--main); padding: 20px; margin-bottom: 30px; }
-.header h1 { margin: 0; color: var(--main); font-size: 2.5rem; text-shadow: 0 0 10px var(--main); }
-.header p { margin: 5px 0; font-size: 1rem; }
-
-/* 測試介面 */
-.bench-container { background: #111; padding: 30px; border-radius: 4px; box-shadow: inset 0 0 20px #000; }
-.progress-box { margin: 30px 0; }
-.bar-bg { background: #222; height: 10px; border-radius: 5px; overflow: hidden; }
-.bar-fill { height: 100%; background: var(--main); width: 0%; transition: width 0.3s linear; }
-
-.realtime-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 30px; }
-.stat-card { border: 1px solid #333; padding: 15px; position: relative; }
-.stat-label { font-size: 0.8rem; color: #777; margin-bottom: 10px; }
-.stat-val { font-size: 1.2rem; color: var(--main); font-weight: bold; }
-
-.btn-run { background: var(--main); color: #fff; border: none; padding: 20px; width: 100%; font-size: 1.5rem; font-weight: bold; cursor: pointer; transition: 0.3s; }
-.btn-run:hover { background: #fff; color: var(--main); }
-
-/* 管理員介面 */
-#admin-zone { margin-top: 100px; padding-top: 50px; border-top: 1px dashed #444; }
-.adm-input { background: #000; border: 1px solid #444; color: #fff; padding: 15px; width: 100%; margin: 5px 0 20px; font-family: inherit; }
-.report { width: 100%; border-collapse: collapse; margin-top: 20px; }
-.report td, .report th { border: 1px solid #333; padding: 15px; text-align: left; }
-.report th { color: var(--main); }
+:root {
+    --primary: #1e90ff;
+    --bg: #0a0a0a;
+    --card-bg: #111;
+    --font: 'Plus Jakarta Sans', sans-serif;
+}
+body {
+    margin: 0;
+    font-family: var(--font);
+    background: var(--bg);
+    color: #fff;
+    display: flex;
+    justify-content: center;
+}
+.wrapper {
+    width: 100%;
+    max-width: 1100px;
+    padding: 40px 20px;
+}
+.header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+.header h1 {
+    font-size: 2.8rem;
+    color: var(--primary);
+    margin: 0;
+    text-shadow: 0 0 15px var(--primary);
+}
+.header p {
+    font-size: 1.1rem;
+    color: #ccc;
+}
+.bench-container {
+    background: var(--card-bg);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+}
+.progress-box {
+    margin: 30px 0;
+}
+.bar-bg {
+    background: #222;
+    height: 14px;
+    border-radius: 7px;
+    overflow: hidden;
+}
+.bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--primary), #00ffff);
+    transition: width 0.3s linear;
+}
+.realtime-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
+    gap: 20px;
+    margin-top: 25px;
+}
+.stat-card {
+    background: #0f0f0f;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #333;
+    box-shadow: inset 0 0 10px #000;
+    text-align: center;
+}
+.stat-label {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 10px;
+}
+.stat-val {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--primary);
+}
+.btn-run {
+    background: var(--primary);
+    color: #fff;
+    font-size: 1.5rem;
+    padding: 18px;
+    border: none;
+    width: 100%;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.btn-run:hover {
+    background: #00ffff;
+    color: #000;
+}
+#ui-done {
+    text-align: center;
+    padding: 30px;
+    border: 2px solid #00ff00;
+    border-radius: 12px;
+    margin-top: 30px;
+}
+#final-code {
+    font-size: 3rem;
+    letter-spacing: 12px;
+    color: #fff;
+    margin-top: 10px;
+}
+#admin-zone {
+    margin-top: 60px;
+    padding-top: 40px;
+    border-top: 1px dashed #444;
+}
+.adm-input {
+    background: #111;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 15px;
+    width: 100%;
+    margin: 8px 0 20px;
+    border-radius: 8px;
+}
+.report {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+.report td, .report th {
+    border: 1px solid #333;
+    padding: 12px;
+    text-align: left;
+}
+.report th {
+    color: var(--primary);
+}
+canvas { display: none; }
 </style>
 </head>
 <body>
 
 <div class="wrapper">
-<div class="header">
-<h1>Hardware Stress Test</h1>
-<p>專業 CPU / RAM / GPU / JS / Storage / Network 壓力測試</p>
+    <div class="header">
+        <h1>Hardware Stress Test</h1>
+        <p>專業 CPU / RAM / GPU / JS / Storage / Network 壓力測試工具</p>
+    </div>
+
+    <div class="bench-container">
+        <div id="ui-idle">
+            <p style="color: var(--primary);">⚠️ 開始測試將對系統硬體進行高負載運算，請確保系統散熱正常。</p>
+            <p>測試輪數：30 | 預估耗時：約 25 分鐘</p>
+            <button class="btn-run" onclick="startStressTest()">開始測試</button>
+        </div>
+
+        <div id="ui-running" style="display:none;">
+            <div style="text-align:center; color: var(--primary);" id="task-name">初始化測試...</div>
+            <div class="progress-box">
+                <div class="bar-bg"><div class="bar-fill" id="bar"></div></div>
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-top:5px;">
+                    <span id="pc-text">0%</span>
+                    <span id="round-text">ROUND 0/30</span>
+                </div>
+            </div>
+
+            <div class="realtime-stats">
+                <div class="stat-card"><div class="stat-label">CPU Stress</div><div class="stat-val" id="stat-cpu">0 ms</div></div>
+                <div class="stat-card"><div class="stat-label">RAM Stress</div><div class="stat-val" id="stat-ram">0 ms</div></div>
+                <div class="stat-card"><div class="stat-label">GPU Stress</div><div class="stat-val" id="stat-gpu">0 ms</div></div>
+                <div class="stat-card"><div class="stat-label">JS Engine</div><div class="stat-val" id="stat-js">0 ms</div></div>
+                <div class="stat-card"><div class="stat-label">Storage IO</div><div class="stat-val" id="stat-storage">0 ms</div></div>
+                <div class="stat-card"><div class="stat-label">Network Latency</div><div class="stat-val" id="stat-network">0 ms</div></div>
+            </div>
+        </div>
+
+        <div id="ui-done">
+            <h2 style="color:#00ff00;">測試完成</h2>
+            <p>測試報告已生成，驗證碼：</p>
+            <div id="final-code">------</div>
+        </div>
+    </div>
+
+    <div id="admin-zone">
+        <h3>ADMIN REPORT</h3>
+        <input type="password" id="pass" class="adm-input" placeholder="ACCESS KEY">
+        <input type="text" id="code" class="adm-input" placeholder="USER AUTH CODE">
+        <button class="btn-run" style="font-size:1rem; padding:12px;" onclick="getStressReport()">查看完整報告</button>
+        <div id="report-view"></div>
+    </div>
 </div>
 
-<div class="bench-container">
-<div id="ui-idle">
-<p style="color: #1e90ff;">⚠️ 注意：開始測試將對 CPU、記憶體、GPU、JS Engine、存儲及網路進行高負載運算。</p>
-<p>測試總輪數：30 ROUNDS | 預計耗時：約 25 分鐘</p>
-<button class="btn-run" onclick="startStressTest()">開始測試</button>
-</div>
-
-<div id="ui-running" style="display: none;">
-<div style="text-align: center; color: var(--main);" id="task-name">初始化測試...</div>
-<div class="progress-box">
-<div class="bar-bg"><div class="bar-fill" id="bar"></div></div>
-<div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.8rem;">
-<span id="pc-text">0%</span>
-<span id="round-text">ROUND 0/30</span>
-</div>
-</div>
-<div class="realtime-stats">
-<div class="stat-card"><div class="stat-label">CPU Stress</div><div class="stat-val" id="stat-cpu">0 ms</div></div>
-<div class="stat-card"><div class="stat-label">RAM Stress</div><div class="stat-val" id="stat-ram">0 ms</div></div>
-<div class="stat-card"><div class="stat-label">GPU Stress</div><div class="stat-val" id="stat-gpu">0 ms</div></div>
-<div class="stat-card"><div class="stat-label">JS Engine</div><div class="stat-val" id="stat-js">0 ms</div></div>
-<div class="stat-card"><div class="stat-label">Storage IO</div><div class="stat-val" id="stat-storage">0 ms</div></div>
-<div class="stat-card"><div class="stat-label">Network Latency</div><div class="stat-val" id="stat-network">0 ms</div></div>
-</div>
-</div>
-
-<div id="ui-done" style="display: none; text-align: center; border: 2px solid #00ff00; padding: 30px;">
-<h2 style="color: #00ff00;">測試完成</h2>
-<p>測試報告已上傳，驗證碼：</p>
-<div id="final-code" style="font-size: 3rem; color: #fff; letter-spacing: 10px;">------</div>
-</div>
-</div>
-
-<div id="admin-zone">
-<h3>ADMIN REPORT</h3>
-<input type="password" id="pass" class="adm-input" placeholder="ACCESS KEY">
-<input type="text" id="code" class="adm-input" placeholder="USER AUTH CODE">
-<button class="btn-run" style="font-size: 1rem; padding: 10px;" onclick="getStressReport()">查看完整報告</button>
-<div id="report-view"></div>
-</div>
-</div>
-
-<canvas id="stress-canvas" width="3840" height="2160" style="display:none;"></canvas>
+<canvas id="stress-canvas" width="3840" height="2160"></canvas>
 
 <script>
-// Firebase 配置
+// Firebase config
 const firebaseConfig = {
     apiKey: "AIzaSyCTWMvsv6JylnjCGYvznnfrXnTSAV7JUXk",
     authDomain: "tnt-device-info.firebaseapp.com",
@@ -107,181 +216,86 @@ const TOTAL_R = 30;
 let logs = { cpu: [], ram: [], gpu: [], js: [], storage: [], network: [] };
 const avg = a => a.reduce((x,y)=>x+y,0)/a.length;
 
-// -------------------------
-// Stress Test Functions
-// -------------------------
+// ---------------- Stress Test ----------------
 async function startStressTest() {
-    document.getElementById('ui-idle').style.display = 'none';
-    document.getElementById('ui-running').style.display = 'block';
-
-    for(let r=1; r<=TOTAL_R; r++) {
-        const pcBase = ((r-1)/TOTAL_R)*100;
-        document.getElementById('round-text').innerText = `ROUND ${r}/${TOTAL_R}`;
-
+    document.getElementById('ui-idle').style.display='none';
+    document.getElementById('ui-running').style.display='block';
+    for(let r=1;r<=TOTAL_R;r++){
+        const pcBase=((r-1)/TOTAL_R)*100;
+        document.getElementById('round-text').innerText=`ROUND ${r}/${TOTAL_R}`;
+        
+        let t;
         // CPU
-        document.getElementById('task-name').innerText = "CPU Stress...";
-        let t = performance.now();
-        await cpuStress();
-        logs.cpu.push(performance.now()-t);
-        document.getElementById('stat-cpu').innerText = `${Math.round(logs.cpu.at(-1))} ms`;
-        document.getElementById('bar').style.width = (pcBase + 5) + '%';
-
+        document.getElementById('task-name').innerText="CPU Stress...";
+        t=performance.now(); await cpuStress(); logs.cpu.push(performance.now()-t); document.getElementById('stat-cpu').innerText=Math.round(logs.cpu.at(-1))+' ms';
+        document.getElementById('bar').style.width=(pcBase+5)+'%';
         // RAM
-        document.getElementById('task-name').innerText = "RAM Stress...";
-        t = performance.now();
-        await ramStress();
-        logs.ram.push(performance.now()-t);
-        document.getElementById('stat-ram').innerText = `${Math.round(logs.ram.at(-1))} ms`;
-        document.getElementById('bar').style.width = (pcBase + 10) + '%';
-
+        document.getElementById('task-name').innerText="RAM Stress..."; t=performance.now(); await ramStress(); logs.ram.push(performance.now()-t); document.getElementById('stat-ram').innerText=Math.round(logs.ram.at(-1))+' ms';
+        document.getElementById('bar').style.width=(pcBase+10)+'%';
         // GPU
-        document.getElementById('task-name').innerText = "GPU Stress...";
-        t = performance.now();
-        await gpuStress();
-        logs.gpu.push(performance.now()-t);
-        document.getElementById('stat-gpu').innerText = `${Math.round(logs.gpu.at(-1))} ms`;
-        document.getElementById('bar').style.width = (pcBase + 15) + '%';
-
+        document.getElementById('task-name').innerText="GPU Stress..."; t=performance.now(); await gpuStress(); logs.gpu.push(performance.now()-t); document.getElementById('stat-gpu').innerText=Math.round(logs.gpu.at(-1))+' ms';
+        document.getElementById('bar').style.width=(pcBase+15)+'%';
         // JS
-        document.getElementById('task-name').innerText = "JS Engine...";
-        t = performance.now();
-        await jsStress();
-        logs.js.push(performance.now()-t);
-        document.getElementById('stat-js').innerText = `${Math.round(logs.js.at(-1))} ms`;
-        document.getElementById('bar').style.width = (pcBase + 20) + '%';
-
+        document.getElementById('task-name').innerText="JS Engine..."; t=performance.now(); await jsStress(); logs.js.push(performance.now()-t); document.getElementById('stat-js').innerText=Math.round(logs.js.at(-1))+' ms';
+        document.getElementById('bar').style.width=(pcBase+20)+'%';
         // Storage
-        document.getElementById('task-name').innerText = "Storage IO...";
-        t = performance.now();
-        await storageStress();
-        logs.storage.push(performance.now()-t);
-        document.getElementById('stat-storage').innerText = `${Math.round(logs.storage.at(-1))} ms`;
-        document.getElementById('bar').style.width = (pcBase + 25) + '%';
-
+        document.getElementById('task-name').innerText="Storage IO..."; t=performance.now(); await storageStress(); logs.storage.push(performance.now()-t); document.getElementById('stat-storage').innerText=Math.round(logs.storage.at(-1))+' ms';
+        document.getElementById('bar').style.width=(pcBase+25)+'%';
         // Network
-        document.getElementById('task-name').innerText = "Network Latency...";
-        t = performance.now();
-        await networkStress();
-        logs.network.push(performance.now()-t);
-        document.getElementById('stat-network').innerText = `${Math.round(logs.network.at(-1))} ms`;
-        document.getElementById('pc-text').innerText = Math.round(pcBase + 30) + '%';
+        document.getElementById('task-name').innerText="Network Latency..."; t=performance.now(); await networkStress(); logs.network.push(performance.now()-t); document.getElementById('stat-network').innerText=Math.round(logs.network.at(-1))+' ms';
+        document.getElementById('pc-text').innerText=Math.round(pcBase+30)+'%';
     }
 
-    // 上傳 Firebase
-    const parser = new UAParser();
-    const authCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const parser=new UAParser();
+    const authCode=Math.random().toString(36).substring(2,8).toUpperCase();
     await db.collection('inferno_v4_pro').doc(authCode).set({
         logs,
         ua: parser.getResult(),
-        stats: {
-            stability: (logs.cpu[0]/logs.cpu.at(-1)*100).toFixed(2),
-            score: Math.round(1000000 / (avg(logs.cpu)+avg(logs.ram)+avg(logs.gpu)+avg(logs.js)))
+        stats:{
+            stability:(logs.cpu[0]/logs.cpu.at(-1)*100).toFixed(2),
+            score: Math.round(1000000/(avg(logs.cpu)+avg(logs.ram)+avg(logs.gpu)+avg(logs.js)))
         },
-        time: new Date().toISOString()
+        time:new Date().toISOString()
     });
 
-    document.getElementById('ui-running').style.display = 'none';
-    document.getElementById('final-code').innerText = authCode;
-    document.getElementById('ui-done').style.display = 'block';
+    document.getElementById('ui-running').style.display='none';
+    document.getElementById('final-code').innerText=authCode;
+    document.getElementById('ui-done').style.display='block';
 }
 
-// ====== Stress Test Implementations ======
-async function cpuStress() {
-    return new Promise(r => {
-        let sum = 0;
-        for(let i=2;i<200000;i++){
-            let prime = true;
-            for(let j=2;j*j<=i;j++){if(i%j===0){prime=false;break;}}
-            if(prime) sum+=i;
-        }
-        r();
-    });
-}
+// ----- Stress Test Functions -----
+async function cpuStress(){ return new Promise(r=>{let s=0;for(let i=2;i<200000;i++){let p=true;for(let j=2;j*j<=i;j++){if(i%j===0){p=false;break;}} if(p)s+=i;} r(); }); }
+async function ramStress(){ return new Promise(r=>{let a=new Float64Array(10_000_000); for(let i=0;i<a.length;i++) a[i]=Math.random(); a.reverse(); a.sort(); r(); }); }
+async function gpuStress(){ return new Promise(r=>{const gl=document.getElementById('stress-canvas').getContext('webgl2'); if(!gl){r(); return;} for(let i=0;i<5000;i++){gl.clearColor(Math.random(),Math.random(),Math.random(),1.0); gl.clear(gl.COLOR_BUFFER_BIT);} r();}); }
+async function jsStress(){ return new Promise(r=>{const obj=Array.from({length:100_000},(_,i)=>({id:i,val:Math.random()})); obj.map(x=>x.val=Math.sqrt(x.val*1000)); obj.sort((a,b)=>b.val-a.val); r();}); }
+async function storageStress(){ return new Promise(r=>{try{const db=indexedDB.open("stressDB",1); db.onsuccess=e=>{r();};}catch{r();} }); }
+async function networkStress(){ return new Promise(async r=>{try{await fetch("https://www.google.com",{mode:"no-cors"});}catch{} r();}); }
 
-async function ramStress() {
-    return new Promise(r => {
-        let arr = new Float64Array(10_000_000);
-        for(let i=0;i<arr.length;i++) arr[i]=Math.random();
-        arr.reverse();
-        arr.sort();
-        r();
-    });
-}
-
-async function gpuStress() {
-    return new Promise(r=>{
-        const gl = document.getElementById('stress-canvas').getContext('webgl2');
-        if(!gl){r(); return;}
-        const count = 5000;
-        for(let i=0;i<count;i++){
-            gl.clearColor(Math.random(),Math.random(),Math.random(),1.0);
-            gl.clear(gl.COLOR_BUFFER_BIT);
-        }
-        r();
-    });
-}
-
-async function jsStress() {
-    return new Promise(r=>{
-        const obj = Array.from({length:100_000},(_,i)=>({id:i,val:Math.random()}));
-        obj.map(x=>x.val=Math.sqrt(x.val*1000));
-        obj.sort((a,b)=>b.val-a.val);
-        r();
-    });
-}
-
-async function storageStress() {
-    return new Promise(async r=>{
-        try{
-            const db = indexedDB.open("stressDB",1);
-            db.onsuccess = e=>{
-                const idb = e.target.result;
-                const tx = idb.transaction("store","readwrite");
-                let store;
-                try { store = tx.objectStore("store"); } catch { store = idb.createObjectStore("store",{keyPath:"id"}); }
-                r();
-            };
-        } catch { r(); }
-    });
-}
-
-async function networkStress() {
-    return new Promise(async r=>{
-        try{
-            await fetch("https://www.google.com",{mode:"no-cors"});
-        } catch {}
-        r();
-    });
-}
-
-// 管理員報告
+// ----- Admin Report -----
 async function getStressReport(){
     if(document.getElementById('pass').value!=='Oliver_5490') return alert('ACCESS DENIED');
-    const c = document.getElementById('code').value.toUpperCase();
-    const doc = await db.collection('inferno_v4_pro').doc(c).get();
+    const c=document.getElementById('code').value.toUpperCase();
+    const doc=await db.collection('inferno_v4_pro').doc(c).get();
     if(!doc.exists) return alert('INVALID CODE');
-    const d = doc.data();
-    const stability = parseFloat(d.stats.stability);
-    let statusText = stability>90?"Excellent":(stability>70?"Average":"Poor");
-
+    const d=doc.data();
+    const stability=parseFloat(d.stats.stability);
+    let statusText=stability>90?"Excellent":(stability>70?"Average":"Poor");
     document.getElementById('report-view').innerHTML=`
         <table class="report">
-            <tr><th colspan="2">SYSTEM INFORMATION</th></tr>
+            <tr><th colspan="2">SYSTEM INFO</th></tr>
             <tr><td>OS / Device</td><td>${d.ua.os.name} | ${d.ua.device.model||'PC'}</td></tr>
             <tr><td>Browser</td><td>${d.ua.browser.name} ${d.ua.browser.version}</td></tr>
-
-            <tr><th colspan="2">STRESS TEST RESULTS (AVG TIME)</th></tr>
-            <tr><td>CPU</td><td>${Math.round(avg(d.logs.cpu))} ms</td></tr>
-            <tr><td>RAM</td><td>${Math.round(avg(d.logs.ram))} ms</td></tr>
-            <tr><td>GPU</td><td>${Math.round(avg(d.logs.gpu))} ms</td></tr>
-            <tr><td>JS Engine</td><td>${Math.round(avg(d.logs.js))} ms</td></tr>
-            <tr><td>Storage IO</td><td>${Math.round(avg(d.logs.storage))} ms</td></tr>
-            <tr><td>Network Latency</td><td>${Math.round(avg(d.logs.network))} ms</td></tr>
-
-            <tr><th colspan="2">OVERALL STABILITY</th></tr>
+            <tr><th colspan="2">STRESS RESULTS (AVG ms)</th></tr>
+            <tr><td>CPU</td><td>${Math.round(avg(d.logs.cpu))}</td></tr>
+            <tr><td>RAM</td><td>${Math.round(avg(d.logs.ram))}</td></tr>
+            <tr><td>GPU</td><td>${Math.round(avg(d.logs.gpu))}</td></tr>
+            <tr><td>JS Engine</td><td>${Math.round(avg(d.logs.js))}</td></tr>
+            <tr><td>Storage IO</td><td>${Math.round(avg(d.logs.storage))}</td></tr>
+            <tr><td>Network</td><td>${Math.round(avg(d.logs.network))}</td></tr>
+            <tr><th colspan="2">OVERALL</th></tr>
             <tr><td>Stability</td><td>${d.stats.stability}%</td></tr>
             <tr><td>Status</td><td>${statusText}</td></tr>
-            <tr><td>Overall Score</td><td>${d.stats.score}</td></tr>
+            <tr><td>Score</td><td>${d.stats.score}</td></tr>
         </table>
     `;
 }
