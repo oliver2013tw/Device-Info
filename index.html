@@ -3,354 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>進階裝置性能驗證系統</title>
+    <title>ESST</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/UAParser.js/1.0.35/ua-parser.min.js"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <style>
-        :root { --primary-color: #007bff; --bg-color: #f4f4f9; --success-color: #28a745; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.08); width: 100%; max-width: 550px; text-align: center; }
-        h2, h3 { color: #333; margin-bottom: 20px; }
-        .btn { background-color: var(--primary-color); color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 600; transition: 0.2s; width: 100%; margin-top: 10px; }
-        .btn:hover { background-color: #0056b3; }
-        .btn:disabled { background-color: #aab8c5; cursor: not-allowed; }
-        .result-box { margin-top: 25px; padding: 15px; background: #e9ffe9; border: 2px dashed var(--success-color); border-radius: 8px; display: none; }
-        .result-code { font-size: 28px; font-weight: bold; color: var(--success-color); letter-spacing: 3px; }
-        .loading-status { color: #555; font-style: italic; margin-top: 20px; display: none; }
-        .loading-step { font-weight: bold; color: var(--primary-color); }
-        
-        /* 管理員區塊樣式 */
-        .admin-toggle { margin-top: 40px; font-size: 13px; color: #999; cursor: pointer; text-decoration: underline; transition: color 0.2s; }
-        .admin-toggle:hover { color: #555; }
-        #admin-panel { display: none; border-top: 1px solid #eee; margin-top: 25px; padding-top: 25px; text-align: left; animation: fadeIn 0.3s ease-in-out; }
-        input { width: 100%; padding: 10px; margin: 8px 0 20px 0; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
-        input:focus { outline: none; border-color: var(--primary-color); }
-        .error-msg { color: #d9534f; background: #f8d7da; padding: 10px; border-radius: 4px; font-size: 14px; display: none; margin-bottom: 15px; }
-        
-        /* 結果表格樣式 */
-        .result-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-        .result-table th, .result-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        .result-table th { background-color: #f8f9fa; color: #333; font-weight: 600; }
-        .section-header { background-color: #e9ecef !important; text-align: center !important; font-size: 15px; }
-        .score-cell { font-family: 'Courier New', monospace; font-weight: bold; color: #d9534f; }
-        .score-note { font-size: 12px; color: #666; margin-top: 5px; text-align: right; }
+        :root { --accent: #00ffcc; --bg: #050505; --panel: #111; --danger: #ff3e3e; }
+        body { background: var(--bg); color: #e0e0e0; font-family: 'Consolas', 'Monaco', monospace; margin: 0; overflow-x: hidden; }
+        .container { max-width: 900px; margin: 40px auto; padding: 20px; }
+        .hero { text-align: center; margin-bottom: 50px; }
+        .hero h1 { font-size: 3rem; margin: 0; color: var(--accent); text-transform: uppercase; letter-spacing: 5px; }
+        .hero p { color: #888; font-size: 1rem; }
 
-        /* 用於 GPU 測試的隱藏 Canvas */
-        #test-canvas { display: none; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        /* 測試面板 */
+        .bench-card { background: var(--panel); border: 1px solid #333; border-radius: 4px; padding: 30px; position: relative; }
+        .status-display { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 0.9rem; }
+        .progress-outer { height: 4px; background: #222; width: 100%; margin: 20px 0; border-radius: 2px; }
+        #progress-inner { height: 100%; background: var(--accent); width: 0%; transition: width 0.5s; box-shadow: 0 0 10px var(--accent); }
+        
+        .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .metric-box { background: #000; padding: 15px; border: 1px solid #222; }
+        .label { color: #666; font-size: 0.75rem; margin-bottom: 5px; text-transform: uppercase; }
+        .value { color: var(--accent); font-size: 1.2rem; font-weight: bold; }
+
+        .btn-action { background: none; border: 1px solid var(--accent); color: var(--accent); padding: 15px 40px; cursor: pointer; font-size: 1.1rem; transition: 0.3s; width: 100%; margin-top: 20px; text-transform: uppercase; }
+        .btn-action:hover { background: var(--accent); color: #000; box-shadow: 0 0 20px var(--accent); }
+        .btn-action:disabled { border-color: #444; color: #444; cursor: not-allowed; }
+
+        .result-code-display { display: none; text-align: center; margin-top: 30px; padding: 20px; background: #001a14; border: 1px solid var(--accent); }
+        
+        /* 管理員專區 */
+        #admin-panel { margin-top: 100px; border-top: 1px solid #333; padding-top: 50px; }
+        .admin-input { background: #000; border: 1px solid #444; color: #fff; padding: 12px; width: 100%; margin-bottom: 10px; box-sizing: border-box; }
+        .report-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .report-table th, .report-table td { border: 1px solid #222; padding: 15px; text-align: left; }
+        .report-table th { background: #1a1a1a; color: var(--accent); font-size: 0.8rem; }
+        .stability-high { color: #00ff00; }
+        .stability-low { color: var(--danger); font-weight: bold; }
+
+        canvas { display: none; }
     </style>
 </head>
 <body>
 
-<canvas id="test-canvas" width="800" height="600"></canvas>
-
 <div class="container">
-    <div id="user-view">
-        <h2>進階裝置性能驗證</h2>
-        <p style="color:#666; margin-bottom: 25px;">點擊按鈕將進行 CPU、記憶體與圖形渲染測試。<br>測試過程約需 3-5 秒。</p>
-        <button id="start-btn" class="btn" onclick="runFullTestSequence()">開始全面測試</button>
-        
-        <div id="loading-area" class="loading-status">
-            正在執行：<span id="loading-step" class="loading-step">準備中...</span>
-            <br><small>(請勿關閉視窗)</small>
+    <div class="hero">
+        <h1>Extreme-Bench v3.0</h1>
+        <p>系統底層壓力測試 - 預計時長：15 ~ 20 分鐘</p>
+    </div>
+
+    <div class="bench-card" id="main-ui">
+        <div id="start-screen">
+            <p style="color: #bbb;">本測試將模擬極高負載的運算任務（多線程整數運算、雙精度浮點數、4K 紋理填充）。測試期間請勿切換視窗或關閉螢幕，否則瀏覽器將會限制性能導致數據不準確。</p>
+            <button class="btn-action" onclick="initExpertBenchmark()">執行完整深度評測</button>
         </div>
-        
-        <div id="result-area" class="result-box">
-            <div>您的驗證代碼：</div>
-            <div class="result-code" id="auth-code"></div>
-            <p style="font-size:14px; color:#666; margin-top:10px;">請將此代碼提供給管理員以查看詳細報告。</p>
+
+        <div id="active-bench" style="display: none;">
+            <div class="status-display">
+                <span id="current-task">準備核心引擎...</span>
+                <span id="current-round">ROUND: 0 / 30</span>
+            </div>
+            <div class="progress-outer"><div id="progress-inner"></div></div>
+            <div class="metric-grid">
+                <div class="metric-box"><div class="label">CPU 負荷</div><div class="value" id="val-cpu">WAITING</div></div>
+                <div class="metric-box"><div class="label">渲染吞吐量</div><div class="value" id="val-gpu">WAITING</div></div>
+                <div class="metric-box"><div class="label">記憶體頻寬</div><div class="value" id="val-ram">WAITING</div></div>
+                <div class="metric-box"><div class="label">熱降頻偵測</div><div class="value" id="val-heat">監控中</div></div>
+            </div>
+        </div>
+
+        <div id="result-screen" class="result-code-display">
+            <p style="margin: 0;">測試完畢。認證加密代碼：</p>
+            <h2 id="final-code" style="letter-spacing: 8px; font-size: 2.5rem; color: var(--accent);">------</h2>
+            <p style="color: #666; font-size: 0.8rem;">(此代碼僅供管理員於後台解碼性能報告)</p>
         </div>
     </div>
 
-    <div class="admin-toggle" onclick="toggleAdmin()">管理員專區</div>
-
     <div id="admin-panel">
-        <h3>管理員登入查看結果</h3>
-        <div id="admin-error" class="error-msg"></div>
-        
-        <label for="admin-pwd">管理員密碼</label>
-        <input type="password" id="admin-pwd" placeholder="輸入密碼">
-        
-        <label for="device-code">裝置認證代碼</label>
-        <input type="text" id="device-code" placeholder="輸入 6 位數代碼" maxlength="6" style="letter-spacing: 2px; font-family: monospace;">
-        
-        <button class="btn" style="background-color: #555;" onclick="fetchAndDisplayData()">查詢詳細報告</button>
-
-        <div id="report-container" style="display: none;">
-            </div>
+        <h3 style="color: #444; border-bottom: 1px solid #222; padding-bottom: 10px;">ADMINISTRATOR DECODING</h3>
+        <input type="password" id="adm-pass" class="admin-input" placeholder="ACCESS PASSWORD">
+        <input type="text" id="adm-code" class="admin-input" placeholder="DEVICE AUTH CODE">
+        <button class="btn-action" style="font-size: 0.9rem;" onclick="loadExpertReport()">解密詳細性能報告</button>
+        <div id="admin-report-container"></div>
     </div>
 </div>
 
+<canvas id="stress-canvas" width="3840" height="2160"></canvas>
+
 <script>
-    // 1. Firebase 設定
+    // Firebase 初始化
     const firebaseConfig = {
         apiKey: "AIzaSyCTWMvsv6JylnjCGYvznnfrXnTSAV7JUXk",
         authDomain: "tnt-device-info.firebaseapp.com",
         projectId: "tnt-device-info",
         storageBucket: "tnt-device-info.firebasestorage.app",
         messagingSenderId: "434641237799",
-        appId: "1:434641237799:web:7b00cf8dd372e29891db02",
-        measurementId: "G-S92W9HQQM9"
+        appId: "1:434641237799:web:7b00cf8dd372e29891db02"
     };
-
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // ==========================================
-    // 2. 測試核心邏輯 (Benchmark Functions)
-    // ==========================================
-
-    // 輔助：延遲函數，避免 UI 卡死
-    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-    // 測試項目 A: CPU 密集運算
-    async function testCPU() {
-        const t0 = performance.now();
-        let result = 0;
-        // 增加複雜度：浮點數、三角函數混合運算
-        for (let i = 0; i < 500000; i++) {
-            result += Math.sin(i) * Math.cos(i) + Math.sqrt(i);
-        }
-        const t1 = performance.now();
-        return Math.round(t1 - t0); // 回傳毫秒整數
-    }
-
-    // 測試項目 B: 記憶體 (RAM) 讀寫模擬
-    async function testRAM() {
-        const t0 = performance.now();
-        // 分配一個較大的陣列 (約 200萬個數字)
-        const arrSize = 2000000;
-        let arr = new Float32Array(arrSize);
-        // 寫入資料
-        for (let i = 0; i < arrSize; i++) {
-            arr[i] = Math.random() * i;
-        }
-        // 讀取並計算
-        let sum = 0;
-        for (let i = 0; i < arrSize; i++) {
-            sum += arr[i];
-        }
-        const t1 = performance.now();
-        return Math.round(t1 - t0);
-    }
-
-    // 測試項目 C: 圖形渲染 (GPU)
-    async function testGPU() {
-        const canvas = document.getElementById('test-canvas');
-        const ctx = canvas.getContext('2d', { alpha: false }); // 優化 context
-        const width = canvas.width;
-        const height = canvas.height;
+    // 專業參數：30 輪循環確保時長與穩定性追蹤
+    const TOTAL_ROUNDS = 30;
+    
+    async function initExpertBenchmark() {
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('active-bench').style.display = 'block';
         
-        const t0 = performance.now();
-        // 繪製 3000 個隨機半透明矩形
-        for (let i = 0; i < 3000; i++) {
-            ctx.fillStyle = `rgba(${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)}, 0.5)`;
-            ctx.fillRect(Math.random() * width, Math.random() * height, Math.random() * 50 + 10, Math.random() * 50 + 10);
-        }
-        // 強制完成渲染佇列 (簡單模擬)
-        const imageData = ctx.getImageData(0, 0, 1, 1);
-        
-        const t1 = performance.now();
-        return Math.round(t1 - t0);
-    }
+        const logs = { cpu: [], gpu: [], ram: [] };
+        const updateUI = (task, round, pc) => {
+            document.getElementById('current-task').innerText = task;
+            document.getElementById('current-round').innerText = `ROUND: ${round} / ${TOTAL_ROUNDS}`;
+            document.getElementById('progress-inner').style.width = pc + '%';
+        };
 
-    // 主流程：執行所有測試並上傳
-    async function runFullTestSequence() {
-        const startBtn = document.getElementById('start-btn');
-        const loadingArea = document.getElementById('loading-area');
-        const loadingStep = document.getElementById('loading-step');
-        const resultArea = document.getElementById('result-area');
-        const authCodeSpan = document.getElementById('auth-code');
+        for(let r = 1; r <= TOTAL_ROUNDS; r++) {
+            let basePC = ((r - 1) / TOTAL_ROUNDS) * 100;
+            
+            // 測試 1: 多重整數壓力 (模擬多核心邏輯)
+            updateUI("CORE INT STRESS...", r, basePC + 2);
+            let t0 = performance.now();
+            await heavyIntCompute(800000);
+            let d1 = performance.now() - t0;
+            logs.cpu.push(d1);
+            document.getElementById('val-cpu').innerText = `${Math.round(d1)} ms`;
 
-        startBtn.disabled = true;
-        resultArea.style.display = 'none';
-        loadingArea.style.display = 'block';
+            // 測試 2: 4K 畫布光柵化壓力 (GPU 負載)
+            updateUI("4K RASTER STRESS...", r, basePC + 4);
+            t0 = performance.now();
+            await heavyGpuRaster(12000);
+            let d2 = performance.now() - t0;
+            logs.gpu.push(d2);
+            document.getElementById('val-gpu').innerText = `${Math.round(d2)} ms`;
 
-        try {
-            // 步驟 1: CPU
-            loadingStep.innerText = "CPU 核心運算測試中...";
-            await delay(100); // 讓 UI 更新
-            const cpuScore = await testCPU();
+            // 測試 3: 記憶體吞吐延遲
+            updateUI("MEM BANDWIDTH STRESS...", r, basePC + 6);
+            t0 = performance.now();
+            await heavyMemOps(15000000);
+            let d3 = performance.now() - t0;
+            logs.ram.push(d3);
+            document.getElementById('val-ram').innerText = `${Math.round(d3)} ms`;
 
-            // 步驟 2: RAM
-            loadingStep.innerText = "記憶體讀寫速度測試中...";
-            await delay(100);
-            const ramScore = await testRAM();
-
-            // 步驟 3: GPU
-            loadingStep.innerText = "圖形渲染能力測試中...";
-            await delay(100);
-            const gpuScore = await testGPU();
-
-            // 步驟 4: 蒐集裝置資訊
-            loadingStep.innerText = "分析裝置資訊並上傳結果...";
-            const parser = new UAParser();
-            const ua = parser.getResult();
-            const deviceType = ua.device.type ? ua.device.type.toUpperCase() : "DESKTOP/LAPTOP";
-            const vendor = ua.device.vendor || "";
-            const model = ua.device.model || "";
-            const fullModel = (vendor || model) ? `${vendor} ${model}`.trim() : "Generic Device";
-
-            // 整理資料結構
-            const testData = {
-                info: {
-                    deviceType: deviceType,
-                    os: `${ua.os.name} ${ua.os.version}`,
-                    browser: `${ua.browser.name} ${ua.browser.version}`,
-                    model: fullModel,
-                    screen: `${window.screen.width} x ${window.screen.height}`,
-                    userAgent: navigator.userAgent
-                },
-                scores: {
-                    cpu: cpuScore,
-                    ram: ramScore,
-                    gpu: gpuScore,
-                    total: cpuScore + ramScore + gpuScore // 總分 (越低越好)
-                },
-                timestamp: new Date().toLocaleString('zh-TW', { hour12: false })
-            };
-
-            // 步驟 5: 上傳至 Firebase
-            const code = generateCode(6);
-            await db.collection('advanced_device_tests').doc(code).set(testData);
-
-            // 完成
-            loadingArea.style.display = 'none';
-            startBtn.style.display = 'none';
-            authCodeSpan.innerText = code;
-            resultArea.style.display = 'block';
-
-        } catch (error) {
-            console.error(error);
-            alert("測試過程中發生錯誤，請重新整理頁面再試一次。");
-            startBtn.disabled = false;
-            loadingArea.style.display = 'none';
-        }
-    }
-
-    // ==========================================
-    // 3. 管理員邏輯與報表呈現
-    // ==========================================
-    function toggleAdmin() {
-        const panel = document.getElementById('admin-panel');
-        panel.style.display = panel.style.display === 'none' || panel.style.display === '' ? 'block' : 'none';
-        if (panel.style.display === 'block') {
-            document.getElementById('admin-pwd').focus();
-        }
-    }
-
-    async function fetchAndDisplayData() {
-        const pwdInput = document.getElementById('admin-pwd').value;
-        const codeInput = document.getElementById('device-code').value.trim().toUpperCase();
-        const errorMsg = document.getElementById('admin-error');
-        const reportContainer = document.getElementById('report-container');
-
-        errorMsg.style.display = 'none';
-        reportContainer.style.display = 'none';
-        reportContainer.innerHTML = "";
-
-        // 簡易密碼驗證
-        if (pwdInput !== "Oliver_5490") {
-            showError("管理員密碼錯誤！");
-            return;
-        }
-        if (codeInput.length < 6) {
-            showError("請輸入完整 6 位數代碼");
-            return;
-        }
-
-        try {
-            const docRef = db.collection('advanced_device_tests').doc(codeInput);
-            const doc = await docRef.get();
-
-            if (doc.exists) {
-                const data = doc.data();
-                renderReportTable(codeInput, data);
-                reportContainer.style.display = 'block';
-            } else {
-                showError("找不到此代碼的測試紀錄。請確認代碼是否正確。");
+            // 熱降頻實時分析
+            if (r > 1) {
+                const thermalGap = logs.cpu[r-1] / logs.cpu[0];
+                if (thermalGap > 1.25) {
+                    document.getElementById('val-heat').innerText = "!!! 嚴重降頻 !!!";
+                    document.getElementById('val-heat').style.color = "var(--danger)";
+                } else {
+                    document.getElementById('val-heat').innerText = "正常範圍";
+                }
             }
-        } catch (error) {
-            console.error("Error fetching data:", error);
-            showError("讀取資料庫時發生錯誤，請檢查網路。");
         }
-    }
 
-    // 渲染 HTML 表格
-    function renderReportTable(code, data) {
-        const info = data.info;
-        const scores = data.scores;
+        const parser = new UAParser();
+        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
         
-        const html = `
-            <table class="result-table">
-                <thead>
-                    <tr>
-                        <th colspan="2" class="section-header">基本資訊與規格</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td style="width: 40%;">代碼 / 時間</td><td><strong>${code}</strong> <br> ${data.timestamp}</td></tr>
-                    <tr><td>裝置型號</td><td><strong>${info.model}</strong></td></tr>
-                    <tr><td>裝置類型</td><td>${info.deviceType}</td></tr>
-                    <tr><td>作業系統</td><td>${info.os}</td></tr>
-                    <tr><td>瀏覽器</td><td>${info.browser}</td></tr>
-                    <tr><td>螢幕解析度</td><td>${info.screen}</td></tr>
-                </tbody>
-                <thead>
-                    <tr>
-                        <th colspan="2" class="section-header" style="border-top: 2px solid #ddd;">
-                            性能測試結果 (單位: 毫秒 ms)
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>CPU 運算耗時</td>
-                        <td class="score-cell">${scores.cpu}</td>
-                    </tr>
-                    <tr>
-                        <td>RAM 讀寫耗時</td>
-                        <td class="score-cell">${scores.ram}</td>
-                    </tr>
-                    <tr>
-                        <td>GPU 渲染耗時</td>
-                        <td class="score-cell">${scores.gpu}</td>
-                    </tr>
-                    <tr style="background-color: #fff0f0;">
-                        <td><strong>總耗時指標</strong></td>
-                        <td class="score-cell" style="font-size: 1.2em;">${scores.total}</td>
-                    </tr>
-                </tbody>
+        await db.collection('pro_expert_v3').doc(code).set({
+            logs,
+            device: parser.getResult(),
+            summary: {
+                stability: ((logs.cpu[0] / logs.cpu[TOTAL_ROUNDS-1]) * 100).toFixed(2),
+                avg_cpu: (logs.cpu.reduce((a,b)=>a+b,0) / TOTAL_ROUNDS).toFixed(2),
+                avg_gpu: (logs.gpu.reduce((a,b)=>a+b,0) / TOTAL_ROUNDS).toFixed(2)
+            },
+            timestamp: new Date().toISOString()
+        });
+
+        document.getElementById('active-bench').style.display = 'none';
+        document.getElementById('final-code').innerText = code;
+        document.getElementById('result-screen').style.display = 'block';
+    }
+
+    // --- 高壓運算引擎 ---
+    function heavyIntCompute(limit) {
+        return new Promise(r => setTimeout(() => {
+            let count = 0;
+            for(let i=2; i<limit; i++) {
+                let p=true; 
+                for(let j=2; j*j<=i; j++) { if(i%j===0){p=false;break;} }
+                if(p) count++;
+            }
+            r();
+        }, 0));
+    }
+
+    function heavyGpuRaster(items) {
+        return new Promise(r => {
+            const ctx = document.getElementById('stress-canvas').getContext('2d');
+            for(let i=0; i<items; i++) {
+                ctx.fillStyle = `rgba(${i%255},${Math.random()*255},255,0.1)`;
+                ctx.beginPath();
+                ctx.arc(Math.random()*3840, Math.random()*2160, 30, 0, Math.PI*2);
+                ctx.fill();
+            }
+            r();
+        });
+    }
+
+    function heavyMemOps(size) {
+        return new Promise(r => setTimeout(() => {
+            let arr = new Float64Array(size);
+            for(let i=0; i<size; i++) arr[i] = Math.sqrt(i) * Math.PI;
+            arr.reverse();
+            r();
+        }, 0));
+    }
+
+    // --- 管理員報告解碼 ---
+    async function loadExpertReport() {
+        const p = document.getElementById('adm-pass').value;
+        const c = document.getElementById('adm-code').value.toUpperCase();
+        if(p !== 'Oliver_5490') return alert('DENIED');
+
+        const doc = await db.collection('pro_expert_v3').doc(c).get();
+        if(!doc.exists) return alert('CODE NOT FOUND');
+
+        const data = doc.data();
+        const s = data.summary;
+        const stabilityClass = s.stability > 85 ? 'stability-high' : 'stability-low';
+
+        
+
+        document.getElementById('admin-report-container').innerHTML = `
+            <table class="report-table">
+                <tr><th colspan="2">ENVIRONMENT DATA</th></tr>
+                <tr><td>OS / MODEL</td><td>${data.device.os.name} | ${data.device.device.vendor || ''} ${data.device.device.model || 'Generic'}</td></tr>
+                <tr><td>BROWSER</td><td>${data.device.browser.name} ${data.device.browser.version}</td></tr>
+                
+                <tr><th colspan="2">PERFORMANCE METRICS (AVG)</th></tr>
+                <tr><td>CPU LOGIC</td><td>${s.avg_cpu} ms</td></tr>
+                <tr><td>GPU RENDER</td><td>${s.avg_gpu} ms</td></tr>
+                
+                <tr><th colspan="2">THERMAL STABILITY</th></tr>
+                <tr><td>穩定度評分</td><td class="${stabilityClass}">${s.stability}%</td></tr>
+                <tr><td colspan="2" style="font-size: 0.7rem; color: #666;">
+                    * 穩定度為第 1 輪與第 30 輪效能比值。數值越低代表發熱降頻越嚴重。
+                </td></tr>
             </table>
-            <div class="score-note">* 數值皆為執行耗時，<strong style="color:#d9534f">越低代表性能越好</strong>。</div>
-            <div style="margin-top:15px; font-size:12px; color:#999; word-break: break-all; max-height: 60px; overflow-y: auto;">
-                UA: ${info.userAgent}
-            </div>
         `;
-        document.getElementById('report-container').innerHTML = html;
-    }
-
-    function showError(msg) {
-        const errorDiv = document.getElementById('admin-error');
-        errorDiv.innerText = msg;
-        errorDiv.style.display = 'block';
-    }
-
-    // 工具：產生易讀的隨機代碼 (移除 I,O,0,1 等易混淆字元)
-    function generateCode(length) {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-        let result = '';
-        for (let i = 0; i < length; i++) {
-            result += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return result;
     }
 </script>
-
 </body>
 </html>
